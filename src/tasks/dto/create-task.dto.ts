@@ -1,9 +1,8 @@
 import { IsNotEmpty } from 'class-validator'
-
-export class CreateTaskDto{
+export class CreateTaskDTO {
   @IsNotEmpty()
-  title: string
+  title: String;
 
   @IsNotEmpty()
-  description: string
+  description: String;
 }
