@@ -19,10 +19,12 @@ export class TasksController {
   //   }
   // }
   //
+
   @Get('/:id')
-  async getTaskByID(@Param('id', ParseIntPipe) id: number): Promise<Task> {
-    return await this.taskService.getTaskByID(id)
+  getTaskByID(@Param('id', ParseIntPipe) id: number): Promise<Task> {
+    return this.taskService.getTaskByID(id)
   }
+  
   //
   // @Post()
   // @UsePipes(ValidationPipe)
