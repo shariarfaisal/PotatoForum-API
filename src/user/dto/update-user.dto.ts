@@ -6,14 +6,4 @@ export class UpdateUserDto{
 
   @IsNotEmpty()
   email: string;
-
-  @IsNotEmpty()
-  isActive: boolean;
-
-  @IsNotEmpty()
-  banned: boolean;
-
-  @IsNotEmpty()
-  role: number;
-
 }

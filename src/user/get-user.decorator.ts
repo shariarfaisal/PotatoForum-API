@@ -3,5 +3,5 @@ import { User } from './user.entity'
 
 
 export const GetUser = createParamDecorator((data,req): User => {
-  return req.user
+  return req.args[0].user
 })

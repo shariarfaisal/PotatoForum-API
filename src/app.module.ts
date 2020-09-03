@@ -3,13 +3,14 @@ import { TasksModule } from './tasks/tasks.module';
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { typeOrmConfig } from './config/typeorm.config'
 import { UserModule } from './user/user.module';
-// import 'reflect-metadata'
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot(typeOrmConfig),
     TasksModule,
-    UserModule
+    UserModule,
+    ProfileModule
   ]
 })
 export class AppModule {}

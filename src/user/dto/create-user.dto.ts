@@ -1,7 +1,14 @@
-import { IsNotEmpty, IsString, IsNumber, IsBoolean, IsEmail, MinLength, MaxLength, Matches } from 'class-validator'
+import { IsNotEmpty, IsString, IsEmail, MinLength, MaxLength, Matches } from 'class-validator'
 
 
 export class CreateUserDto{
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(55)
+  name: string;
+
   @IsNotEmpty()
   @IsString()
   @MinLength(3)
@@ -12,18 +19,6 @@ export class CreateUserDto{
   @IsString()
   @IsEmail()
   email: string;
-
-  @IsNotEmpty()
-  @IsBoolean()
-  isActive: boolean;
-
-  @IsNotEmpty()
-  @IsBoolean()
-  banned: boolean;
-
-  @IsNotEmpty()
-  @IsNumber()
-  role: number;
 
   @IsNotEmpty()
   @IsString()

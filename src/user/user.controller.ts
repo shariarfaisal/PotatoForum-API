@@ -6,6 +6,8 @@ import { DeleteResult } from 'typeorm'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { SigninDto } from './dto/signin.dto'
 import { AuthGuard } from '@nestjs/passport'
+import { GetUser } from './get-user.decorator'
+
 
 @Controller('user')
 export class UserController {
@@ -17,7 +19,14 @@ export class UserController {
     return this.userService.getUsers()
   }
 
+  @Get('/self')
+  @UseGuards(AuthGuard())
+  async getUserSelf(@GetUser() user: User):Promise<User>{
+    return await User.findOne(user.id)
+  }
+
   @Get('/:id')
+  @UseGuards(AuthGuard())
   getUsersById(@Param('id') id: string):Promise<User>{
     return this.userService.getUsersById(id)
   }
@@ -27,19 +36,25 @@ export class UserController {
     return this.userService.signupUser(data)
   }
 
+  @Post('/signup/admin')
+  signupUserAdmin(@Body(ValidationPipe) data: CreateUserDto):Promise<User>{
+    return this.userService.signupUserAdmin(data,true)
+  }
+
   @Post('/signin')
   signin(@Body(ValidationPipe) data: SigninDto):Promise<{ accessToken: string }>{
     return this.userService.signin(data)
   }
 
-  @Delete('/:id')
-  deleteUser(@Param('id') id: string): Promise<DeleteResult>{
-    return this.userService.deleteUser(id)
+  @Delete('/')
+  @UseGuards(AuthGuard())
+  deleteUser(@GetUser() user: User): Promise<DeleteResult>{
+    return this.userService.deleteUser(user.id)
   }
 
-  @Put('/:id')
-  updateUser(@Param('id') id: string, @Body() updateData: UpdateUserDto): Promise<User>{
-    return this.userService.updateUser(id,updateData)
+  @Put('/')
+  updateUser(@Body() updateData: UpdateUserDto, @GetUser() user: User): Promise<User>{
+    return this.userService.updateUser(user.id,updateData)
   }
 
 }

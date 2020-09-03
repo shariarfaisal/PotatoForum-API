@@ -1,4 +1,7 @@
-import {Entity, PrimaryGeneratedColumn, Column, /*Unique,*/ BaseEntity} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, /*Unique,*/ BaseEntity, OneToMany, OneToOne} from "typeorm";
+import { Task } from '../tasks/task.entity'
+import { UserRole } from './user-role.enum'
+import { Profile } from '../profile/profile.entity'
 
 @Entity()
 // @Unique(['username', 'email'])
@@ -20,9 +23,12 @@ export class User extends BaseEntity{
     banned: boolean;
 
     @Column()
-    role: number;
+    role: UserRole;
 
     @Column()
     password: string;
+
+    // @OneToMany(type => Task, task => task.user, { eager: true })
+    // tasks: Task[]
 
 }

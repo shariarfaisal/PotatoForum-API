@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { DeleteResult } from 'typeorm'
 import { UserRepository } from './user.repository'
@@ -8,7 +8,7 @@ import { UpdateUserDto } from './dto/update-user.dto'
 import { SigninDto } from './dto/signin.dto'
 import { JwtService } from '@nestjs/jwt'
 import { JwtPayload } from './jwt-payload.interface'
-
+import { Profile } from '../profile/profile.entity'
 
 @Injectable()
 export class UserService{
@@ -36,6 +36,10 @@ export class UserService{
     return this.userRepository.signupUser(createUserDto)
   }
 
+  signupUserAdmin(createUserDto: CreateUserDto,admin: boolean): Promise<User>{
+    return this.userRepository.signupUser(createUserDto,admin)
+  }
+
   async signin(data: SigninDto): Promise<{ accessToken: string }> {
     const user = await this.userRepository.validateUserPassword(data)
 
@@ -45,6 +49,11 @@ export class UserService{
   }
 
   async deleteUser(id: string): Promise<DeleteResult>{
+    const profileDelete = await Profile.delete({ userId: id })
+    if(profileDelete.affected === 0){
+      throw new NotFoundException()
+    }
+
     const result = await this.userRepository.delete(id)
     if(result.affected === 0){
       throw new NotFoundException(`User with ID ${id} not found!`)
@@ -53,16 +62,26 @@ export class UserService{
   }
 
   async updateUser(id: string,updateData: UpdateUserDto): Promise<User>{
-    const { username, email, isActive, banned, role } = updateData
+    const { username, email } = updateData
     const user = await this.getUsersById(id)
+    const profile = await Profile.findOne({ userId: id})
+    if(!profile){
+      throw new NotFoundException()
+    }
 
     user.username = username
     user.email = email
-    user.isActive = isActive
-    user.banned = banned
-    user.role = role
-    await user.save()
-    return user
+
+    profile.email = email
+
+    try{
+      await profile.save()
+      await user.save()
+      return user
+    }catch(err){
+      throw new InternalServerErrorException()
+    }
+
   }
 
 }
