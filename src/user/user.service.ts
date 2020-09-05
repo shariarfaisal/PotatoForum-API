@@ -9,6 +9,7 @@ import { SigninDto } from './dto/signin.dto'
 import { JwtService } from '@nestjs/jwt'
 import { JwtPayload } from './jwt-payload.interface'
 import { Profile } from '../profile/profile.entity'
+import { UserRole } from './user-role.enum'
 
 @Injectable()
 export class UserService{
@@ -19,12 +20,17 @@ export class UserService{
     private jwtService: JwtService
   ){}
 
-  async getUsers(): Promise<User[]>{
-    const users = await this.userRepository.find()
+  async getUsers(user: User): Promise<User[] | Profile[]>{
+    let users = []
+    if(user.role === UserRole.ADMIN){
+      users = await this.userRepository.find()
+    }else{
+      users = await Profile.find()
+    }
     return users
   }
 
-  async getUsersById(id: string): Promise<User>{
+  async getUserById(id: string): Promise<User>{
     const found = await this.userRepository.findOne(id)
     if(!found){
       throw new NotFoundException(`User with ID ${id} not found!`)
@@ -49,7 +55,7 @@ export class UserService{
   }
 
   async deleteUser(id: string): Promise<DeleteResult>{
-    const profileDelete = await Profile.delete({ userId: id })
+    const profileDelete = await Profile.delete({ user: { id } })
     if(profileDelete.affected === 0){
       throw new NotFoundException()
     }
@@ -63,8 +69,8 @@ export class UserService{
 
   async updateUser(id: string,updateData: UpdateUserDto): Promise<User>{
     const { username, email } = updateData
-    const user = await this.getUsersById(id)
-    const profile = await Profile.findOne({ userId: id})
+    const user = await this.getUserById(id)
+    const profile = await Profile.findOne({ user: { id }})
     if(!profile){
       throw new NotFoundException()
     }

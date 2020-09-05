@@ -37,7 +37,7 @@ export class UserRepository extends Repository<User>{
 
     try{
       await user.save()
-      profile.userId = user.id
+      profile.user = user 
       await profile.save()
     }catch(err){
       if(err.code === '23505'){

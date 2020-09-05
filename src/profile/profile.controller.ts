@@ -8,7 +8,7 @@ import { UserRole } from '../user/user-role.enum'
 import { UpdateProfileDTO } from './dto/update-profile.dto'
 import { SocialDTO } from './dto/social.dto'
 import { SocialEntity } from './social.entity'
-
+import { Post as PostEntity } from '../post/post.entity'
 
 @Controller('profile')
 @UseGuards(AuthGuard())
@@ -22,10 +22,15 @@ export class ProfileController {
     return this.profileService.getProfile(user)
   }
 
-  @Get('/users')
-  getUsersProfile(@GetUser() user: User): Promise<Profile[]>{
-    return this.profileService.getUsersProfile(user)
+  @Get('/posts')
+  getPostsByProfile(@GetUser() user: User): Promise<PostEntity[]>{
+    return this.profileService.getPostsByProfile(user)
   }
+
+  // @Get('/users')
+  // getUsersProfile(@GetUser() user: User): Promise<Profile[]>{
+  //   return this.profileService.getUsersProfile(user)
+  // }
 
   @Get('/:id')
   getProfileById(@GetUser() user: User, @Param('id') id: string): Promise<Profile>{

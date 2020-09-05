@@ -7,6 +7,8 @@ import { UpdateProfileDTO } from './dto/update-profile.dto'
 import { SocialDTO } from './dto/social.dto'
 import { SocialEntity } from './social.entity'
 import { UserRole } from '../user/user-role.enum'
+import { Post } from '../post/post.entity'
+
 
 @Injectable()
 export class ProfileService {
@@ -16,7 +18,7 @@ export class ProfileService {
   ){}
 
   async getProfile(user: User): Promise<Profile>{
-    const found = await this.profileRepository.findOne({ userId: user.id })
+    const found = await this.profileRepository.findOne({ user: { id: user.id } })
     if(!found){
       throw new NotFoundException()
     }
@@ -67,5 +69,11 @@ export class ProfileService {
 
   getUpdateProfile(dto: UpdateProfileDTO, user: User): Promise<Profile>{
     return this.profileRepository.updateProfile(dto, user)
+  }
+
+  async getPostsByProfile(user: User): Promise<Post[]>{
+    const profile = await this.getProfile(user)
+    const posts = await Post.find({ profile: { id: profile.id }})
+    return posts
   }
 }

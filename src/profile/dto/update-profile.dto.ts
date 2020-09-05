@@ -1,7 +1,7 @@
-import { IsString, IsEmpty } from 'class-validator'
+import { IsString, IsNotEmpty } from 'class-validator'
 
 export class UpdateProfileDTO{
-  @IsEmpty()
+  @IsNotEmpty()
   @IsString()
   name: string;
 

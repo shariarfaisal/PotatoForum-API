@@ -8,7 +8,7 @@ import { UpdateProfileDTO } from './dto/update-profile.dto'
 export class ProfileRepository extends Repository<Profile>{
 
   async updateProfile(dto: UpdateProfileDTO, user: User): Promise<Profile>{
-    const profile = await this.findOne({ userId: user.id })
+    const profile = await this.findOne({ user: { id: user.id } })
     if(!profile){
       throw new NotFoundException()
     }

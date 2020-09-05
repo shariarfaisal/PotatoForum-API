@@ -7,7 +7,7 @@ import { UpdateUserDto } from './dto/update-user.dto'
 import { SigninDto } from './dto/signin.dto'
 import { AuthGuard } from '@nestjs/passport'
 import { GetUser } from './get-user.decorator'
-
+import { Profile } from '../profile/profile.entity'
 
 @Controller('user')
 export class UserController {
@@ -15,8 +15,8 @@ export class UserController {
 
   @Get('/')
   @UseGuards(AuthGuard())
-  getUsers():Promise<User[]>{
-    return this.userService.getUsers()
+  getUsers(@GetUser() user: User):Promise<User[] | Profile[]>{
+    return this.userService.getUsers(user)
   }
 
   @Get('/self')
@@ -28,7 +28,7 @@ export class UserController {
   @Get('/:id')
   @UseGuards(AuthGuard())
   getUsersById(@Param('id') id: string):Promise<User>{
-    return this.userService.getUsersById(id)
+    return this.userService.getUserById(id)
   }
 
   @Post('/signup')
