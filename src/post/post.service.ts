@@ -33,7 +33,7 @@ export class PostService {
 
   async getPostsByUser(id: string): Promise<Post[]>{
     const profile = await this.postRepository.getProfile(id)
-    const posts = await this.postRepository.find({ profile })
+    const posts = await this.postRepository.find({ profile: { id: profile.id } })
     return posts
   }
 

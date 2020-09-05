@@ -1,8 +1,8 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm'
 import { User } from '../user/user.entity'
 import { Task } from '../tasks/task.entity'
-import { Profile } from '../profile/profile.entity'
 import { Post } from '../post/post.entity'
+import { Profile } from '../user/profile.entity'
 import { Comment } from '../comment/comment.entity'
 
 

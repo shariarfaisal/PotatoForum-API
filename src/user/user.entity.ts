@@ -1,6 +1,6 @@
 import {Entity, PrimaryGeneratedColumn, Column, /*Unique,*/ BaseEntity, OneToOne} from "typeorm";
 import { UserRole } from './user-role.enum'
-import { Profile } from '../profile/profile.entity'
+import { Profile } from './profile.entity'
 
 @Entity()
 // @Unique(['username', 'email'])
@@ -14,6 +14,10 @@ export class User extends BaseEntity{
 
     @Column({ unique: true})
     email: string;
+
+    @Column({ unique: true, nullable: true })
+    contact: string;
+
 
     @Column()
     isActive: boolean;

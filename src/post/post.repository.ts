@@ -2,7 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { EntityRepository, Repository } from 'typeorm'
 import { Post } from './post.entity'
 import { User } from '../user/user.entity'
-import { Profile } from '../profile/profile.entity'
+import { Profile } from '../user/profile.entity'
 import { PostDto } from './dto/post.dto'
 
 @EntityRepository(Post)

@@ -1,5 +1,5 @@
 import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm'
-import { Profile } from '../profile/profile.entity'
+import { Profile } from '../user/profile.entity'
 import { Comment } from '../comment/comment.entity'
 
 @Entity()

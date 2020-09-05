@@ -20,6 +20,10 @@ export class CreateUserDto{
   @IsEmail()
   email: string;
 
+  @IsString()
+  @MaxLength(25)
+  contact: string;
+
   @IsNotEmpty()
   @IsString()
   @MinLength(8)

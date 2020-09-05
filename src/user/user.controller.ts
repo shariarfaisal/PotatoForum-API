@@ -7,7 +7,10 @@ import { UpdateUserDto } from './dto/update-user.dto'
 import { SigninDto } from './dto/signin.dto'
 import { AuthGuard } from '@nestjs/passport'
 import { GetUser } from './get-user.decorator'
-import { Profile } from '../profile/profile.entity'
+import { Profile } from './profile.entity'
+import { Post as PostEntity } from '../post/post.entity'
+import { SocialDTO } from './dto/social.dto'
+import { SocialEntity } from './social.entity'
 
 @Controller('user')
 export class UserController {
@@ -19,17 +22,48 @@ export class UserController {
     return this.userService.getUsers(user)
   }
 
-  @Get('/self')
+  @Get('/profile')
   @UseGuards(AuthGuard())
-  async getUserSelf(@GetUser() user: User):Promise<User>{
-    return await User.findOne(user.id)
+  async getUserProfile(@GetUser() user: User):Promise<User>{
+    return this.userService.getUserById(user.id)
   }
 
-  @Get('/:id')
-  @UseGuards(AuthGuard())
-  getUsersById(@Param('id') id: string):Promise<User>{
-    return this.userService.getUserById(id)
+
+  @Put('/profile/social')
+  addSocialLinks(@Body() dto: SocialDTO, @GetUser() user: User): Promise<SocialEntity>{
+    return this.userService.addSocialLinks(dto,user)
   }
+
+  @Get('/profile/posts')
+  getPostsByProfile(@GetUser() user: User): Promise<PostEntity[]>{
+    return this.userService.getPostsByUser(user.id)
+  }
+
+  @Get('/:userId')
+  @UseGuards(AuthGuard())
+  getUser(
+    @GetUser() user: User,
+    @Param('userId') userId: string
+  ):Promise<User | Profile>{
+    return this.userService.getUser(user,userId)
+  }
+
+  @Get('/:userId/posts')
+  getPostsByUserId(
+    @Param('userId') userId: string
+  ): Promise<PostEntity[]>{
+    return this.userService.getPostsByUser(userId)
+  }
+
+
+
+  // TODO: User isActive check ...
+  // TODO: User banned ...
+  // TODO: Email confirmation
+  // TODO: User existence by username
+  // TODO: Update password
+
+
 
   @Post('/signup')
   signupUser(@Body(ValidationPipe) data: CreateUserDto):Promise<User>{

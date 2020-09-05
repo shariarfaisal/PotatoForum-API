@@ -8,8 +8,11 @@ import { UpdateUserDto } from './dto/update-user.dto'
 import { SigninDto } from './dto/signin.dto'
 import { JwtService } from '@nestjs/jwt'
 import { JwtPayload } from './jwt-payload.interface'
-import { Profile } from '../profile/profile.entity'
+import { Profile } from './profile.entity'
 import { UserRole } from './user-role.enum'
+import { Post } from '../post/post.entity'
+import { SocialDTO } from './dto/social.dto'
+import { SocialEntity } from './social.entity'
 
 @Injectable()
 export class UserService{
@@ -30,12 +33,30 @@ export class UserService{
     return users
   }
 
-  async getUserById(id: string): Promise<User>{
-    const found = await this.userRepository.findOne(id)
+  async getUserById(userId: string): Promise<User>{
+    return this.userRepository.getUserById(userId)
+  }
+
+  async getProfileByUserId(userId: string): Promise<Profile>{
+    const found = await Profile.findOne({ user: { id: userId } })
     if(!found){
-      throw new NotFoundException(`User with ID ${id} not found!`)
+      throw new NotFoundException()
     }
     return found
+  }
+
+  async getUser(user: User, userId: string): Promise<User | Profile>{
+    if(user.role === UserRole.ADMIN){
+      return this.userRepository.getUserById(userId)
+    }else{
+      return this.getProfileByUserId(userId)
+    }
+  }
+
+  async getPostsByUser(userId: string): Promise<Post[]>{
+    const profile = await this.getProfileByUserId(userId)
+    const posts = await Post.find({ profile: { id: profile.id }})
+    return posts
   }
 
   signupUser(createUserDto: CreateUserDto): Promise<User>{
@@ -55,10 +76,12 @@ export class UserService{
   }
 
   async deleteUser(id: string): Promise<DeleteResult>{
-    const profileDelete = await Profile.delete({ user: { id } })
-    if(profileDelete.affected === 0){
-      throw new NotFoundException()
-    }
+    // const profileDelete = await Profile.delete({ user: { id } })
+    // if(profileDelete.affected === 0){
+    //   throw new NotFoundException()
+    // }
+
+    // BUG: Delete User section can be break because of profile section dependency
 
     const result = await this.userRepository.delete(id)
     if(result.affected === 0){
@@ -67,27 +90,31 @@ export class UserService{
     return result
   }
 
-  async updateUser(id: string,updateData: UpdateUserDto): Promise<User>{
-    const { username, email } = updateData
-    const user = await this.getUserById(id)
-    const profile = await Profile.findOne({ user: { id }})
-    if(!profile){
-      throw new NotFoundException()
-    }
+  async updateUser(id: string,dto: UpdateUserDto): Promise<User>{
+    return this.userRepository.updateUser(id,dto)
+  }
 
-    user.username = username
-    user.email = email
 
-    profile.email = email
+  async addSocialLinks(dto: SocialDTO,user: User): Promise<SocialEntity>{
+    const { facebook, twitter, linkedin, github, web } = dto
+    const profile = await this.getProfileByUserId(user.id)
+
+    const social = new SocialEntity()
+    social.facebook = facebook
+    social.twitter = twitter
+    social.linkedin = linkedin
+    social.github = github
+    social.web = web
+
+    profile.social = social
 
     try{
       await profile.save()
-      await user.save()
-      return user
+      return profile.social
     }catch(err){
       throw new InternalServerErrorException()
     }
-
   }
+
 
 }

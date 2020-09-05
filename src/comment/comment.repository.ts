@@ -4,7 +4,7 @@ import { Comment } from './comment.entity'
 import { User } from '../user/user.entity'
 import { Post } from '../post/post.entity'
 import { CommentDto } from './dto/comment.dto'
-import { Profile } from '../profile/profile.entity'
+import { Profile } from '../user/profile.entity'
 
 @EntityRepository(Comment)
 export class CommentRepository extends Repository<Comment>{
