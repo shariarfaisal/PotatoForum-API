@@ -29,8 +29,7 @@ export class CommentService {
   }
 
   async deleteComment(commentId: string, user: User): Promise<boolean>{
-    const profile = await this.commentRepository.getProfileByUserId(user.id)
-    const deletedComment = await this.commentRepository.delete({ id: commentId, profile: { id: profile.id }})
+    const deletedComment = await this.commentRepository.delete({ id: commentId, profile: { id: user.profile.id }})
     if(deletedComment.affected === 0){
       throw new NotFoundException()
     }

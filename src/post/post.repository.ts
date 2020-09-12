@@ -8,16 +8,9 @@ import { PostDto } from './dto/post.dto'
 @EntityRepository(Post)
 export class PostRepository extends Repository<Post>{
 
-  async getProfile(id: string): Promise<Profile>{
-    const profile = await Profile.findOne({ user: { id } })
-    if(!profile){
-      throw new BadRequestException()
-    }
-    return profile
-  }
 
   async createPost(dto: PostDto, user: User): Promise<Post>{
-    const profile = await this.getProfile(user.id)
+    const profile = await Profile.findOne(user.profile.id)
     const { title, body, tags } = dto
 
     const post = new Post()
@@ -31,8 +24,7 @@ export class PostRepository extends Repository<Post>{
 
 
   async updatePost(id: string, dto: PostDto,user: User): Promise<Post>{
-    const profile = await this.getProfile(user.id)
-    const post = await this.findOne({ id, profile:{ id: profile.id } })
+    const post = await this.findOne({ id, profile:{ id: user.profile.id } })
     if(!post){
       throw new NotFoundException()
     }
@@ -46,8 +38,7 @@ export class PostRepository extends Repository<Post>{
   }
 
   async deletePost(id: string, user: User): Promise<boolean>{
-    const profile = await this.getProfile(user.id)
-    const postDelete = await this.delete({ id, profile:{ id: profile.id } })
+    const postDelete = await this.delete({ id, profile:{ id: user.profile.id } })
     if(postDelete.affected === 0){
       throw new NotFoundException()
     }

@@ -1,4 +1,4 @@
-import { Controller, Param, Get, Post, Put, Delete, Body, UseGuards } from '@nestjs/common';
+import { Controller, Param, Get, Post, Put, Delete, Body, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { GetUser } from '../user/get-user.decorator'
 import { User } from '../user/user.entity'
 import { AuthGuard  } from '@nestjs/passport'
@@ -7,20 +7,20 @@ import { CommentDto } from './dto/comment.dto'
 import { Comment } from './comment.entity'
 
 @Controller('comment')
-@UseGuards(AuthGuard())
 export class CommentController {
   constructor(
     private commentService: CommentService
   ){}
 
   @Get('/:commentId')
-  getCommentById(@Param('commentId') id: string): Promise<Comment>{
+  getCommentById(@Param('commentId',ParseUUIDPipe) id: string): Promise<Comment>{
     return this.commentService.getCommentById(id)
   }
 
-  @Post('/:postId')
+  @Post('/:postId/post')
+  @UseGuards(AuthGuard())
   createComment(
-    @Param('postId') id: string,
+    @Param('postId',ParseUUIDPipe) id: string,
     @Body() dto: CommentDto,
     @GetUser() user: User
   ): Promise<Comment>{
@@ -28,8 +28,9 @@ export class CommentController {
   }
 
   @Put('/:commentId')
+  @UseGuards(AuthGuard())
   updateComment(
-    @Param('commentId') commentId: string,
+    @Param('commentId',ParseUUIDPipe) commentId: string,
     @Body() dto: CommentDto,
     @GetUser() user: User
   ){
@@ -37,8 +38,9 @@ export class CommentController {
   }
 
   @Delete('/:commentId')
+  @UseGuards(AuthGuard())
   deleteComment(
-    @Param('commentId') id: string,
+    @Param('commentId',ParseUUIDPipe) id: string,
     @GetUser() user: User
   ): Promise<boolean>{
     return this.commentService.deleteComment(id, user)

@@ -19,10 +19,13 @@ export class Post extends BaseEntity{
   @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   createdAt: string;
 
+  @Column({ default: true, nullable: false })
+  published: boolean;
+
   @ManyToOne(type => Profile, profile => profile.posts, { eager: true } )
   profile: Profile;
 
-  @OneToMany(type => Comment, comment => comment.post, { eager: true })
+  @OneToMany(type => Comment, comment => comment.post, { eager: true, onDelete: 'CASCADE' })
   comments: Comment[]
 
 }

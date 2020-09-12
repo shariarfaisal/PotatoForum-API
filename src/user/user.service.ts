@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common'
+import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException, UnauthorizedException, NotAcceptableException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { DeleteResult } from 'typeorm'
 import { UserRepository } from './user.repository'
@@ -13,6 +13,10 @@ import { UserRole } from './user-role.enum'
 import { Post } from '../post/post.entity'
 import { SocialDTO } from './dto/social.dto'
 import { SocialEntity } from './social.entity'
+import { UpdatePasswordDto } from './dto/update-password.dto'
+import * as bcrypt from 'bcryptjs'
+import { GetUserFilterDto } from './dto/get-user-filter.dto'
+import { GetPostFilterDto } from './dto/get-post-filter.dto'
 
 @Injectable()
 export class UserService{
@@ -23,47 +27,86 @@ export class UserService{
     private jwtService: JwtService
   ){}
 
-  async getUsers(user: User): Promise<User[] | Profile[]>{
-    let users = []
-    if(user.role === UserRole.ADMIN){
-      users = await this.userRepository.find()
-    }else{
-      users = await Profile.find()
+  async getUsers(filterDto: GetUserFilterDto): Promise<User[]>{
+    const { isActive, banned, limit, page } = filterDto
+    const query = this.userRepository.createQueryBuilder('user')
+
+    query.leftJoinAndSelect('user.profile','profile')
+
+    if(isActive && (isActive === 'true' || isActive === 'false')){
+      query.andWhere('user.isActive = :isActive',{ isActive: isActive === 'true'? true : false })
     }
+
+    if(banned && (banned === 'true' || banned === 'false')){
+      query.andWhere('user.banned = :banned',{ banned: banned === 'true'? true : false })
+    }
+
+    if(page && Number(page)){
+      query.offset(Number(limit) > 0 ? Number(limit) * Number(page) - Number(limit): Number(page) * 1 - 1)
+    }
+
+    if(limit && Number(limit) > 0){
+      query.limit(Number(limit))
+    }else{
+      query.limit(10)
+    }
+
+    const users = query.getMany()
     return users
   }
 
+  async checkUsername(username: string): Promise<boolean>{
+    const exists = await this.userRepository.findOne({ username })
+    return exists ? true: false
+  }
+
   async getUserById(userId: string): Promise<User>{
-    return this.userRepository.getUserById(userId)
+    const get = await this.userRepository.getUserById(userId)
+    return get
   }
 
-  async getProfileByUserId(userId: string): Promise<Profile>{
-    const found = await Profile.findOne({ user: { id: userId } })
-    if(!found){
-      throw new NotFoundException()
+
+  async getPostsByUserId(user: User,filterDto: GetPostFilterDto): Promise<Post[]>{
+    const query = Post.createQueryBuilder('post')
+    const { page, limit, search, published } = filterDto
+    query.andWhere('post.profile = :profile',{profile: user.profile.id })
+
+    if(published && published === 'false'){
+      query.andWhere('post.published = :published',{ published: false })
     }
-    return found
-  }
 
-  async getUser(user: User, userId: string): Promise<User | Profile>{
-    if(user.role === UserRole.ADMIN){
-      return this.userRepository.getUserById(userId)
+    if(search){
+      query.andWhere('post.title LIKE :search OR post.body LIKE :search',{ search })
+    }
+
+    if(page && Number(page)){
+      query.offset(Number(limit) > 0 ? Number(limit) * Number(page) - Number(limit): Number(page) * 1 - 1)
+    }
+
+    if(limit && Number(limit) > 0){
+      query.limit(Number(limit))
     }else{
-      return this.getProfileByUserId(userId)
+      query.limit(10)
     }
-  }
 
-  async getPostsByUser(userId: string): Promise<Post[]>{
-    const profile = await this.getProfileByUserId(userId)
-    const posts = await Post.find({ profile: { id: profile.id }})
+    const posts = await query.getMany()
     return posts
   }
 
-  signupUser(createUserDto: CreateUserDto): Promise<User>{
+  async getPostsByAdminUserId(userId: string): Promise<Post[]>{
+    const user = await this.getUserById(userId)
+    if(user.role !== UserRole.ADMIN){
+      throw new UnauthorizedException()
+    }
+    const posts = await Post.find({ profile: { id: user.profile.id } })
+    return posts
+  }
+
+  signupUser(createUserDto: CreateUserDto): Promise<boolean>{
     return this.userRepository.signupUser(createUserDto)
   }
 
-  signupUserAdmin(createUserDto: CreateUserDto,admin: boolean): Promise<User>{
+  signupUserAdmin(createUserDto: CreateUserDto,admin: boolean): Promise<boolean>{
     return this.userRepository.signupUser(createUserDto,admin)
   }
 
@@ -75,29 +118,33 @@ export class UserService{
     return { accessToken }
   }
 
-  async deleteUser(id: string): Promise<DeleteResult>{
-    // const profileDelete = await Profile.delete({ user: { id } })
-    // if(profileDelete.affected === 0){
-    //   throw new NotFoundException()
-    // }
-
-    // BUG: Delete User section can be break because of profile section dependency
-
-    const result = await this.userRepository.delete(id)
-    if(result.affected === 0){
-      throw new NotFoundException(`User with ID ${id} not found!`)
+  async deleteUser(user: User): Promise<string>{
+    try{
+      const deleteProfile = await Profile.delete(user.profile.id)
+      if(deleteProfile.affected !== 0){
+        const deleteUser = await this.userRepository.delete(user.id)
+        if(deleteUser.affected !== 0){
+          return "User deleted."
+        }else{
+          throw new NotFoundException("User not found.")
+        }
+      }else{
+        throw new NotFoundException("Profile not found.")
+      }
+    }catch(err){
+      throw new InternalServerErrorException()
     }
-    return result
   }
 
-  async updateUser(id: string,dto: UpdateUserDto): Promise<User>{
-    return this.userRepository.updateUser(id,dto)
+  async updateUser(userId: string,dto: UpdateUserDto): Promise<User>{
+    return this.userRepository.updateUser(userId,dto)
   }
 
 
-  async addSocialLinks(dto: SocialDTO,user: User): Promise<SocialEntity>{
+  async addSocialLinks(dto: SocialDTO,userId: string): Promise<SocialEntity>{
     const { facebook, twitter, linkedin, github, web } = dto
-    const profile = await this.getProfileByUserId(user.id)
+    const user = await this.getUserById(userId)
+    const profile = await Profile.findOne(user.profile.id)
 
     const social = new SocialEntity()
     social.facebook = facebook
@@ -116,5 +163,34 @@ export class UserService{
     }
   }
 
+  async updatePassword(dto: UpdatePasswordDto ,userId: string): Promise<string>{
+    const user = await this.getUserById(userId)
+    const { oldPassword, newPassword } = dto
+
+    const salt = bcrypt.genSalt()
+    const isPassValid = bcrypt.compare(oldPassword,user.password)
+    if(!isPassValid){
+      throw new BadRequestException("Invalid cridentials.")
+    }
+
+    user.password = await bcrypt.hash(newPassword,salt)
+
+    try{
+      await user.save()
+      return "Password updated."
+    }catch(err){
+      throw new InternalServerErrorException()
+    }
+  }
+
+  async bannedHandler(userId: string, banned: boolean): Promise<User>{
+    if(typeof banned !== 'boolean'){
+      throw new NotAcceptableException("Banned must have to be true or false")
+    }
+    const user = await this.userRepository.getUserById(userId)
+    user.banned = banned
+    await user.save()
+    return user
+  }
 
 }

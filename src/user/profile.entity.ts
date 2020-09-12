@@ -1,8 +1,7 @@
-import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, OneToMany, OneToOne } from 'typeorm'
+import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm'
 import { SocialEntity } from './social.entity'
 import { Post } from '../post/post.entity'
 import { Comment } from '../comment/comment.entity'
-import { User } from '../user/user.entity'
 
 
 @Entity()
@@ -19,7 +18,7 @@ export class Profile extends BaseEntity{
   @Column({ nullable: true})
   address: string;
 
-  @Column()
+  @Column({ unique: true})
   email: string;
 
   @Column(type => SocialEntity)
@@ -28,12 +27,9 @@ export class Profile extends BaseEntity{
   @Column({ nullable: true})
   imageUrl: string;
 
-  @OneToOne(type => User, user => user.profile, { eager: false })
-  user: User
-
-  @OneToMany(type => Post, post => post.profile, { eager: false })
+  @OneToMany(type => Post, post => post.profile, { eager: false, onDelete: 'CASCADE' })
   posts: Post[]
 
-  @OneToMany(type => Comment, comment => comment.profile, { eager: false })
+  @OneToMany(type => Comment, comment => comment.profile, { eager: false, onDelete: 'CASCADE' })
   comments: Comment[]
 }

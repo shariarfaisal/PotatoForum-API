@@ -1,16 +1,18 @@
-import { Controller, Get, Param, Post, Body, Delete, ValidationPipe, Put, UseGuards } from '@nestjs/common';
+import { Controller, Query, Get, Param, Post, Body, Delete, ValidationPipe, Put, UseGuards, UnauthorizedException, ParseUUIDPipe } from '@nestjs/common';
 import { UserService } from './user.service'
 import { User } from './user.entity'
 import { CreateUserDto } from './dto/create-user.dto'
-import { DeleteResult } from 'typeorm'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { SigninDto } from './dto/signin.dto'
 import { AuthGuard } from '@nestjs/passport'
 import { GetUser } from './get-user.decorator'
-import { Profile } from './profile.entity'
 import { Post as PostEntity } from '../post/post.entity'
 import { SocialDTO } from './dto/social.dto'
 import { SocialEntity } from './social.entity'
+import { UpdatePasswordDto } from './dto/update-password.dto'
+import { UserRole } from './user-role.enum'
+import { GetUserFilterDto } from './dto/get-user-filter.dto'
+import { GetPostFilterDto } from './dto/get-post-filter.dto'
 
 @Controller('user')
 export class UserController {
@@ -18,9 +20,21 @@ export class UserController {
 
   @Get('/')
   @UseGuards(AuthGuard())
-  getUsers(@GetUser() user: User):Promise<User[] | Profile[]>{
-    return this.userService.getUsers(user)
+  getUsers(
+    @Query() query: GetUserFilterDto,
+    @GetUser() user: User
+  ):Promise<User[]>{
+    if(user.role !== UserRole.ADMIN){
+      throw new UnauthorizedException()
+    }
+    return this.userService.getUsers(query)
   }
+
+  @Get('/:username/check-username')
+  async checkUserExistenceByUsername(@Param('username') username: string): Promise<boolean>{
+    return this.userService.checkUsername(username)
+  }
+
 
   @Get('/profile')
   @UseGuards(AuthGuard())
@@ -28,31 +42,37 @@ export class UserController {
     return this.userService.getUserById(user.id)
   }
 
+  @Get('/profile/posts')
+  @UseGuards(AuthGuard())
+  getPostsByProfile(@Query() query: GetPostFilterDto,@GetUser() user: User): Promise<PostEntity[]>{
+    return this.userService.getPostsByUserId(user,query)
+  }
+
 
   @Put('/profile/social')
-  addSocialLinks(@Body() dto: SocialDTO, @GetUser() user: User): Promise<SocialEntity>{
-    return this.userService.addSocialLinks(dto,user)
+  updateSocialLinks(@Body() dto: SocialDTO, @GetUser() user: User): Promise<SocialEntity>{
+    return this.userService.addSocialLinks(dto,user.id)
   }
 
-  @Get('/profile/posts')
-  getPostsByProfile(@GetUser() user: User): Promise<PostEntity[]>{
-    return this.userService.getPostsByUser(user.id)
-  }
 
   @Get('/:userId')
   @UseGuards(AuthGuard())
-  getUser(
+  getUserById(
     @GetUser() user: User,
-    @Param('userId') userId: string
-  ):Promise<User | Profile>{
-    return this.userService.getUser(user,userId)
+    @Param('userId',ParseUUIDPipe) userId: string
+  ):Promise<User>{
+    if(user.role !== UserRole.ADMIN){
+      throw new UnauthorizedException()
+    }
+    return this.userService.getUserById(userId)
   }
 
+
   @Get('/:userId/posts')
-  getPostsByUserId(
-    @Param('userId') userId: string
+  getPostsByProfileId(
+    @Param('userId',ParseUUIDPipe) userId: string
   ): Promise<PostEntity[]>{
-    return this.userService.getPostsByUser(userId)
+    return this.userService.getPostsByAdminUserId(userId)
   }
 
 
@@ -61,17 +81,16 @@ export class UserController {
   // TODO: User banned ...
   // TODO: Email confirmation
   // TODO: User existence by username
-  // TODO: Update password
 
 
 
   @Post('/signup')
-  signupUser(@Body(ValidationPipe) data: CreateUserDto):Promise<User>{
+  signupUser(@Body(ValidationPipe) data: CreateUserDto):Promise<boolean>{
     return this.userService.signupUser(data)
   }
 
   @Post('/signup/admin')
-  signupUserAdmin(@Body(ValidationPipe) data: CreateUserDto):Promise<User>{
+  signupUserAdmin(@Body(ValidationPipe) data: CreateUserDto):Promise<boolean>{
     return this.userService.signupUserAdmin(data,true)
   }
 
@@ -82,13 +101,32 @@ export class UserController {
 
   @Delete('/')
   @UseGuards(AuthGuard())
-  deleteUser(@GetUser() user: User): Promise<DeleteResult>{
-    return this.userService.deleteUser(user.id)
+  deleteUser(@GetUser() user: User): Promise<string>{
+    return this.userService.deleteUser(user)
   }
 
-  @Put('/')
+  @Put('/profile')
+  @UseGuards(AuthGuard())
   updateUser(@Body() updateData: UpdateUserDto, @GetUser() user: User): Promise<User>{
     return this.userService.updateUser(user.id,updateData)
+  }
+
+  @Put('/password')
+  updatePassword(@Body() dto: UpdatePasswordDto, @GetUser() user: User): Promise<string>{
+    return this.userService.updatePassword(dto, user.id)
+  }
+
+  @Put('/:userId/banned')
+  @UseGuards(AuthGuard())
+  bannedHandler(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() body: { banned: boolean },
+    @GetUser() user: User
+  ): Promise<User>{
+    if(user.role !== UserRole.ADMIN){
+      throw new UnauthorizedException()
+    }
+    return this.userService.bannedHandler(userId,body.banned)
   }
 
 }

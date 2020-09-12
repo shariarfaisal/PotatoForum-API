@@ -1,4 +1,4 @@
-import {Entity, PrimaryGeneratedColumn, Column, /*Unique,*/ BaseEntity, OneToOne} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, /*Unique,*/ BaseEntity, OneToOne, JoinColumn} from "typeorm";
 import { UserRole } from './user-role.enum'
 import { Profile } from './profile.entity'
 
@@ -31,10 +31,9 @@ export class User extends BaseEntity{
     @Column()
     password: string;
 
-    @OneToOne(type => Profile, profile => profile.user, { eager: true })
+    @OneToOne(type => Profile,{ eager: true, onDelete: 'CASCADE' })
+    @JoinColumn()
     profile: Profile;
 
-    // @OneToMany(type => Task, task => task.user, { eager: true })
-    // tasks: Task[]
 
 }
