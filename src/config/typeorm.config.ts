@@ -13,7 +13,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   port: 5432,
   username:  process.env.PG_USERNAME ||  dbConfig.username,
   database: process.env.PG_DATABASE ||  dbConfig.database,
-  password: process.env.PASSWORD ||  dbConfig.password,
+  password: process.env.PG_PASSWORD ||  dbConfig.password,
   entities: [ User, Profile, Post, Comment ],
   synchronize: process.env.TYPEORM_SYNC || dbConfig.synchronize,
 }
