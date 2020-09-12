@@ -79,7 +79,7 @@ export class UserService{
     }
 
     if(search){
-      query.andWhere('post.title LIKE :search OR post.body LIKE :search',{ search })
+      query.andWhere('post.title LIKE :search OR post.body LIKE :search OR post.tags LIKE :search',{ search })
     }
 
     if(page && Number(page)){
@@ -149,7 +149,7 @@ export class UserService{
     if(!isValid){
       throw new BadRequestException({ errors })
     }
-    
+
     const { facebook, twitter, linkedin, github, web } = dto
     const user = await this.getUserById(userId)
     const profile = await Profile.findOne(user.profile.id)

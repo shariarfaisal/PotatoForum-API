@@ -1,4 +1,4 @@
-import { NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common'
 import { EntityRepository, Repository } from 'typeorm'
 import { Comment } from './comment.entity'
 import { User } from '../user/user.entity'
@@ -17,9 +17,14 @@ export class CommentRepository extends Repository<Comment>{
   }
 
   async createComment(postId: string,dto: CommentDto, user: User): Promise<Comment>{
-    const post = await this.getPostById(postId)
     const { body } = dto
+    if(!body){
+      throw new BadRequestException({ errors:{ body: "Body required." }} )
+    }else if(body.length > 1000){
+      throw new BadRequestException({ errors:{ body: "1000 characters limited." }} )
+    }
 
+    const post = await this.getPostById(postId)
     const comment = new Comment()
     comment.body = body
     comment.post = post
@@ -38,7 +43,12 @@ export class CommentRepository extends Repository<Comment>{
     }
 
     const { body } = dto
-    comment.body = body
+    if(!body){
+      throw new BadRequestException({ errors:{ body: "Body required." }} )
+    }else if(body.length > 1000){
+      throw new BadRequestException({ errors:{ body: "1000 characters limited." }} )
+    }
+
     await comment.save()
     return comment
   }

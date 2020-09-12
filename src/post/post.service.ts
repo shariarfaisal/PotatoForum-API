@@ -22,7 +22,7 @@ export class PostService {
     query.andWhere('post.published = :published',{ published: true})
 
     if(search){
-      query.andWhere('post.title LIKE :search OR post.body LIKE :search',{ search })
+      query.andWhere('post.title LIKE :search OR post.body LIKE :search OR post.tags LIKE :search',{ search })
     }
 
     if(page && Number(page)){

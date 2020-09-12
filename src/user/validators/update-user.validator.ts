@@ -5,11 +5,11 @@ export const updateUserValidator = ({ name, username, email, contact, work, addr
   const errors: any = {}
 
   if(!name) errors.name = "Name required."
-  else if(name.length > 2) errors.name = "Name should be atleast 2 characters."
+  else if(name.length < 2) errors.name = "Name should be atleast 2 characters."
   else if(name.length > 55) errors.name = "Too long characters."
 
   if(!username) errors.username = "Username required."
-  else if(username.length > 2) errors.username = "Username should be atleast 2 characters."
+  else if(username.length < 2) errors.username = "Username should be atleast 2 characters."
   else if(username.length > 55) errors.username = "Too long characters."
 
   if(!email) errors.email = "Email required."
