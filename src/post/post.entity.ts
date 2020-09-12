@@ -13,8 +13,8 @@ export class Post extends BaseEntity{
   @Column({ nullable: false })
   body: string;
 
-  @Column('simple-array',{ nullable: false })
-  tags: string[]
+  @Column({ nullable: false })
+  tags: string;
 
   @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   createdAt: string;

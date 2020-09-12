@@ -7,6 +7,10 @@ import * as bcrypt from 'bcryptjs'
 import { UserRole } from './user-role.enum'
 import { Profile } from './profile.entity'
 import { UpdateUserDto } from './dto/update-user.dto'
+import { createUserValidator } from './validators/create-user.validator'
+import { updateUserValidator } from './validators/update-user.validator'
+import { signinValidator } from './validators/signin.validator'
+
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User>{
@@ -20,6 +24,12 @@ export class UserRepository extends Repository<User>{
   }
 
   async signupUser(createUserDto: CreateUserDto,admin?: boolean): Promise<boolean>{
+    const { errors, isValid } = createUserValidator(createUserDto)
+    if(!isValid){
+      throw new BadRequestException({ errors })
+    }
+
+
     const { name, username, email, password, contact } = createUserDto
     const user = new User()
     const profile = new Profile()
@@ -27,12 +37,12 @@ export class UserRepository extends Repository<User>{
 
     const emailExists = await Profile.findOne({ email })
     if(emailExists){
-      throw new ConflictException({ email: "Email already exists."})
+      throw new ConflictException({ errors: {email: "Email already exists."}})
     }
 
     const usernameExists = await User.findOne({ username })
     if(usernameExists){
-      throw new ConflictException({ username: "Username taken."})
+      throw new ConflictException({ errors: { username: "Username taken." }})
     }
 
     profile.name = name
@@ -76,6 +86,12 @@ export class UserRepository extends Repository<User>{
   }
 
   async updateUser(id: string,updateData: UpdateUserDto): Promise<User>{
+    const { errors, isValid } = updateUserValidator(updateData)
+    if(!isValid){
+      throw new BadRequestException({ errors })
+    }
+
+
     const { name, username, email, contact, work, address } = updateData
     const user = await this.getUserById(id)
 
@@ -99,6 +115,11 @@ export class UserRepository extends Repository<User>{
   }
 
   async validateUserPassword(data: SigninDto):Promise<User>{
+    const { errors, isValid } = signinValidator(data)
+    if(!isValid){
+      throw new BadRequestException({ errors })
+    }
+
     const { username, password } = data
     const user = await this.findOne({ username })
     if(!user){

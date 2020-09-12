@@ -17,6 +17,9 @@ import { UpdatePasswordDto } from './dto/update-password.dto'
 import * as bcrypt from 'bcryptjs'
 import { GetUserFilterDto } from './dto/get-user-filter.dto'
 import { GetPostFilterDto } from './dto/get-post-filter.dto'
+import { updatePasswordValidator } from './validators/update-password.validator'
+import { socialValidator } from './validators/social.validator'
+
 
 @Injectable()
 export class UserService{
@@ -142,6 +145,11 @@ export class UserService{
 
 
   async addSocialLinks(dto: SocialDTO,userId: string): Promise<SocialEntity>{
+    const { errors, isValid } = socialValidator(dto)
+    if(!isValid){
+      throw new BadRequestException({ errors })
+    }
+    
     const { facebook, twitter, linkedin, github, web } = dto
     const user = await this.getUserById(userId)
     const profile = await Profile.findOne(user.profile.id)
@@ -164,6 +172,11 @@ export class UserService{
   }
 
   async updatePassword(dto: UpdatePasswordDto ,userId: string): Promise<string>{
+    const { errors, isValid } = updatePasswordValidator(dto)
+    if(!isValid){
+      throw new BadRequestException({ errors })
+    }
+
     const user = await this.getUserById(userId)
     const { oldPassword, newPassword } = dto
 
